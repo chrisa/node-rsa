@@ -1,0 +1,12 @@
+{
+  "name" : "rsa",
+  "version" : "v0.0.1",
+  "description" : "OpenSSL's RSA encrypt/decrypt routines",
+  "keywords" : ["openssl", "crypto", "rsa"],
+  "homepage" : "https://github.com/chrisa/node-rsa#readme",
+  "author" : { "name" : "Chris Andrews", "email": "chris@nodnol.org" },
+//	     "files" : [ "LICENCE", "README.md", "test", "rsa.public", "rsa.private" ],
+  "main" : "./rsa.js",
+  "repository" : { "type" : "git", "url" : "http://github.com/chrisa/node-rsa.git" },
+  "scripts": { "install": "node-waf configure build" }
+}
