@@ -251,7 +251,7 @@ Handle<Value> RsaKeypair::Encrypt(const Arguments& args) {
     }
   }
   if (out) free(out);
-  return scope.Close(outString);
+  return outString;
 }
 
 Handle<Value> RsaKeypair::Decrypt(const Arguments& args) {
@@ -324,7 +324,7 @@ Handle<Value> RsaKeypair::Decrypt(const Arguments& args) {
 
   if (out) free(out);
   free(buf);
-  return scope.Close(outString);
+  return outString;
 }
 
 
