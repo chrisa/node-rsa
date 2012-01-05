@@ -1,9 +1,8 @@
 var
   fs = require('fs'),
-  sys = require('sys'),
   assert = require('assert');
 
-var rsa = require('rsa');
+var rsa = require('../rsa');
 
 var plaintext = "The Plaintext";
 
@@ -34,4 +33,4 @@ var ciphertext = keypair.encrypt(plaintext, 'utf8');
 var plaintext_again = keypair.decrypt(ciphertext, 'binary', 'utf8');
 assert.equal(plaintext, plaintext_again);
 
-sys.puts("done");
+console.log("done");

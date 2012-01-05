@@ -25,3 +25,5 @@ def shutdown():
     if Options.commands['build']:
         if exists('build/default/' + t) and not exists(t):
             symlink('build/default/' + t, t)
+        if exists('build/Release/' + t) and not exists(t):
+            symlink('build/Release/' + t, t)

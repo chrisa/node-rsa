@@ -6,8 +6,6 @@ try {
     var RsaKeypair = binding.RsaKeypair;
     var rsa = true;
 } catch (e) {
-    var sys = require('sys');
-    sys.puts(sys.inspect(e));
     var rsa = false;
 }
 

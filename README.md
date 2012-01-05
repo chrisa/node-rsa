@@ -9,6 +9,10 @@ decryption with a private key.
 
 See test/test.js.
 
+## Node Versions
+
+This module should work on both Node.js 0.4.x and 0.6.x.
+
 ## Licence
 
 BSD, see LICENCE.
