@@ -98,6 +98,10 @@ void RsaKeypair::Initialize(Handle<Object> target) {
                             RsaKeypair::Encrypt);
   NODE_SET_PROTOTYPE_METHOD(t, "decrypt",
                             RsaKeypair::Decrypt);
+  NODE_SET_PROTOTYPE_METHOD(t, "getModulus",
+                            RsaKeypair::GetModulus);
+  NODE_SET_PROTOTYPE_METHOD(t, "getExponent",
+                            RsaKeypair::GetExponent);
 
   target->Set(String::NewSymbol("RsaKeypair"), t->GetFunction());
 }
@@ -327,6 +331,68 @@ Handle<Value> RsaKeypair::Decrypt(const Arguments& args) {
   return scope.Close(outString);
 }
 
+Handle<Value> RsaKeypair::GetBignum(const Arguments& args, WhichComponent which) {
+  HandleScope scope;
+
+  RsaKeypair *kp = ObjectWrap::Unwrap<RsaKeypair>(args.Holder());
+  RSA *target = (kp->privateKey != NULL) ? kp->privateKey : kp->publicKey;
+
+  if (target == NULL) {
+    Local<Value> exception = Exception::Error(String::New("No key set"));
+    return ThrowException(exception);
+  }
+
+  BIGNUM *number = (which == MODULUS) ? target->n : target->e;
+  int out_len = BN_num_bytes(number);
+  unsigned char *out = new unsigned char[out_len];
+
+  out_len = BN_bn2bin(number, out); // Return value also indicates error.
+
+  if (out_len < 0) {
+    char *err = ERR_error_string(ERR_get_error(), NULL);
+    Local<String> full_err = String::Concat(String::New("Get: "), String::New(err));
+    Local<Value> exception = Exception::Error(full_err);
+    return ThrowException(exception);
+  }
+
+  Local<Value> outString;
+  if (out_len == 0) {
+    outString = String::New("");
+  } else if (args.Length() <= 0 || !args[0]->IsString()) {
+    outString = Encode(out, out_len, BINARY);
+  } else {
+    char* out_hexdigest;
+    int out_hex_len;
+    String::Utf8Value encoding(args[0]->ToString());
+    if (strcasecmp(*encoding, "hex") == 0) {
+      hex_encode(out, out_len, &out_hexdigest, &out_hex_len);
+      outString = Encode(out_hexdigest, out_hex_len, BINARY);
+      free(out_hexdigest);
+    } else if (strcasecmp(*encoding, "base64") == 0) {
+      base64(out, out_len, &out_hexdigest, &out_hex_len);
+      outString = Encode(out_hexdigest, out_hex_len, BINARY);
+      free(out_hexdigest);
+    } else if (strcasecmp(*encoding, "binary") == 0) {
+      outString = Encode(out, out_len, BINARY);
+    } else {
+      outString = String::New("");
+      Local<Value> exception = Exception::Error(String::New("RsaKeypair.get* encoding "
+							    "can be binary, base64 or hex"));
+      return ThrowException(exception);
+    }
+  }
+
+  if (out) free(out);
+  return scope.Close(outString);
+}
+
+Handle<Value> RsaKeypair::GetModulus(const Arguments& args) {
+  return GetBignum(args, MODULUS);
+}
+
+Handle<Value> RsaKeypair::GetExponent(const Arguments& args) {
+  return GetBignum(args, EXPONENT);
+}
 
 extern "C" void
 init(Handle<Object> target) {
