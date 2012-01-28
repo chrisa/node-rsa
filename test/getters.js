@@ -80,12 +80,6 @@ function doGet(key, kind, which, encoding) {
     }
 }
 
-/**
- * Test getting the components of a private key.
- */
-function testPrivate(key) {
-}
-
 module.exports = {
     test: test
 };
