@@ -7,7 +7,7 @@ decryption with a private key.
 
 ## Usage
 
-See test/test.js.
+See test/test.js and test/getters.js. 
 
 ## Node Versions
 
