@@ -1,6 +1,6 @@
 {
   "name" : "rsa",
-  "version" : "v0.0.2",
+  "version" : "v0.0.3",
   "description" : "OpenSSL's RSA encrypt/decrypt routines",
   "keywords" : ["openssl", "crypto", "rsa"],
   "homepage" : "https://github.com/chrisa/node-rsa#readme",
