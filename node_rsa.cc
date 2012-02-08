@@ -10,6 +10,8 @@
 
 #include <errno.h>
 
+#include <openssl/pem.h>
+
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 # define OPENSSL_CONST const
 #else
@@ -102,6 +104,10 @@ void RsaKeypair::Initialize(Handle<Object> target) {
                             RsaKeypair::GetModulus);
   NODE_SET_PROTOTYPE_METHOD(t, "getExponent",
                             RsaKeypair::GetExponent);
+  NODE_SET_PROTOTYPE_METHOD(t, "getPublicKeyPem",
+                            RsaKeypair::GetPublicKeyPem);
+  NODE_SET_PROTOTYPE_METHOD(t, "getPrivateKeyPem",
+                            RsaKeypair::GetPrivateKeyPem);
 
   target->Set(String::NewSymbol("RsaKeypair"), t->GetFunction());
 }
@@ -393,6 +399,73 @@ Handle<Value> RsaKeypair::GetModulus(const Arguments& args) {
 Handle<Value> RsaKeypair::GetExponent(const Arguments& args) {
   return GetBignum(args, EXPONENT);
 }
+
+Handle<Value> RsaKeypair::GetPublicKeyPem(const Arguments& args) {
+  HandleScope scope;
+
+  RsaKeypair *kp = ObjectWrap::Unwrap<RsaKeypair>(args.Holder());
+  RSA *target = (kp->privateKey != NULL) ? kp->privateKey : kp->publicKey;
+
+  if (target == NULL) {
+    Local<Value> exception = Exception::Error(String::New("No key set"));
+    return ThrowException(exception);
+  }
+
+  BIO *bp = BIO_new(BIO_s_mem());
+
+  if ((bp == NULL) ||
+      !PEM_write_bio_RSA_PUBKEY(bp, target)) {
+    char *err = ERR_error_string(ERR_get_error(), NULL);
+    Local<String> full_err = String::New(err);
+    Local<Value> exception = Exception::Error(full_err);
+    if (bp != NULL) {
+      BIO_vfree(bp);
+    }
+    return ThrowException(exception);
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(bp, &data);
+  Local<Value> outString = String::New(data, length);
+
+  BIO_vfree(bp);
+
+  return scope.Close(outString);
+}
+
+Handle<Value> RsaKeypair::GetPrivateKeyPem(const Arguments& args) {
+  HandleScope scope;
+
+  RsaKeypair *kp = ObjectWrap::Unwrap<RsaKeypair>(args.Holder());
+  RSA *target = kp->privateKey;
+
+  if (target == NULL) {
+    Local<Value> exception = Exception::Error(String::New("No key set"));
+    return ThrowException(exception);
+  }
+
+  BIO *bp = BIO_new(BIO_s_mem());
+
+  if ((bp == NULL) ||
+      !PEM_write_bio_RSAPrivateKey(bp, target, NULL, NULL, 0, NULL, NULL)) {
+    char *err = ERR_error_string(ERR_get_error(), NULL);
+    Local<String> full_err = String::New(err);
+    Local<Value> exception = Exception::Error(full_err);
+    if (bp != NULL) {
+      BIO_vfree(bp);
+    }
+    return ThrowException(exception);
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(bp, &data);
+  Local<Value> outString = String::New(data, length);
+
+  BIO_vfree(bp);
+
+  return scope.Close(outString);
+}
+
 
 extern "C" void
 init(Handle<Object> target) {

@@ -37,4 +37,7 @@ assert.equal(plaintext, plaintext_again);
 // Check getters.
 require("./getters").test(rsaPublic, rsaPrivate, passphrase);
 
+// Check PEM format getters.
+require("./pem").test(rsaPublic, rsaPrivate, passphrase);
+
 console.log("done");

@@ -30,6 +30,8 @@ class RsaKeypair : ObjectWrap {
   static v8::Handle<v8::Value> Decrypt(const v8::Arguments& args);
   static v8::Handle<v8::Value> GetModulus(const v8::Arguments& args);
   static v8::Handle<v8::Value> GetExponent(const v8::Arguments& args);
+  static v8::Handle<v8::Value> GetPublicKeyPem(const v8::Arguments& args);
+  static v8::Handle<v8::Value> GetPrivateKeyPem(const v8::Arguments& args);
 
   // Helper for GetModulus() and GetExponent().
   static v8::Handle<v8::Value> GetBignum(const v8::Arguments& args, WhichComponent which);
