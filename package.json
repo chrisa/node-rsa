@@ -18,5 +18,5 @@
   "main" : "./rsa.js",
   "repository" : { "type" : "git", "url" : "http://github.com/chrisa/node-rsa.git" },
   "scripts": { "install": "node-waf configure build" },
-  "engines" : { "node" : "0.4 || 0.5 || 0.6" }
+  "engines" : { "node" : "0.4 || 0.5 || 0.6 || 0.8" }
 }
