@@ -1,3 +1,8 @@
+# NO LONGER MAINTAINED
+
+Please see https://github.com/Obvious/ursa for a maintained
+alternative to this module, which should do everything this does.
+
 # node-rsa
 
 This module provides access to RSA public-key routines from OpenSSL.
