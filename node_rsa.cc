@@ -94,6 +94,8 @@ void RsaKeypair::Initialize(Handle<Object> target) {
                             RsaKeypair::SetPublicKey);
   NODE_SET_PROTOTYPE_METHOD(t, "setPrivateKey",
                             RsaKeypair::SetPrivateKey);
+  NODE_SET_PROTOTYPE_METHOD(t, "setPadding",
+                            RsaKeypair::SetPadding);
   NODE_SET_PROTOTYPE_METHOD(t, "encrypt",
                             RsaKeypair::Encrypt);
   NODE_SET_PROTOTYPE_METHOD(t, "decrypt",
@@ -102,6 +104,8 @@ void RsaKeypair::Initialize(Handle<Object> target) {
                             RsaKeypair::GetModulus);
   NODE_SET_PROTOTYPE_METHOD(t, "getExponent",
                             RsaKeypair::GetExponent);
+  NODE_SET_PROTOTYPE_METHOD(t, "getPadding",
+                            RsaKeypair::GetPadding);
 
   target->Set(String::NewSymbol("RsaKeypair"), t->GetFunction());
 }
@@ -112,6 +116,7 @@ Handle<Value> RsaKeypair::New(const Arguments& args) {
   p->Wrap(args.Holder());
   p->privateKey = NULL;
   p->publicKey = NULL;
+  p->padding = RSA_PKCS1_OAEP_PADDING;
   return args.This();
 }
 
@@ -185,6 +190,30 @@ Handle<Value> RsaKeypair::SetPrivateKey(const Arguments& args) {
   return True();
 }
 
+Handle<Value> RsaKeypair::SetPadding(const Arguments& args) {
+  HandleScope scope;
+
+  RsaKeypair *kp = ObjectWrap::Unwrap<RsaKeypair>(args.Holder());
+
+  String::Utf8Value padding(args[0]->ToString());
+
+  if (strcasecmp(*padding, "oaep") == 0)
+    kp->padding = RSA_PKCS1_OAEP_PADDING;
+  else if (strcasecmp(*padding, "pkcs1") == 0)
+    kp->padding = RSA_PKCS1_PADDING;
+  else if (strcasecmp(*padding, "sslv23") == 0)
+    kp->padding = RSA_SSLV23_PADDING;
+  else if (strcasecmp(*padding, "none") == 0)
+    kp->padding = RSA_NO_PADDING;
+  else {
+    Local<Value> exception = Exception::Error(String::New("RsaKeypair.setPadding "
+                                  "can be oaep (default), pkcs1, sslv23 or none"));
+	return ThrowException(exception);
+  }
+    
+  return True();
+}
+
 Handle<Value> RsaKeypair::Encrypt(const Arguments& args) {
   HandleScope scope;
 
@@ -203,8 +232,20 @@ Handle<Value> RsaKeypair::Encrypt(const Arguments& args) {
     return ThrowException(exception);
   }
 
-  // check per RSA_public_encrypt(3) when using OAEP
-  if (len >= RSA_size(kp->publicKey) - 41) {
+  ssize_t paddingLength = -1;
+  switch (kp->padding) {
+    case RSA_PKCS1_OAEP_PADDING:
+      paddingLength = 41;
+      break;
+    case RSA_PKCS1_PADDING:
+    case RSA_SSLV23_PADDING:
+      paddingLength = 11;
+      break;
+  }
+  
+  // check per RSA_public_encrypt(3) when using padding modes
+  if (len >= RSA_size(kp->publicKey) - paddingLength) {
+  char *temp = new char[128];
     Local<Value> exception = Exception::TypeError(String::New("Bad argument (too long for key size)"));
     return ThrowException(exception);
   }
@@ -216,7 +257,7 @@ Handle<Value> RsaKeypair::Encrypt(const Arguments& args) {
   int out_len = RSA_size(kp->publicKey);
   unsigned char *out = (unsigned char*)malloc(out_len);
 
-  int r = RSA_public_encrypt(len, buf, out, kp->publicKey, RSA_PKCS1_OAEP_PADDING);
+  int r = RSA_public_encrypt(len, buf, out, kp->publicKey, kp->padding);
 
   if (r < 0) {
     char *err = ERR_error_string(ERR_get_error(), NULL);
@@ -307,7 +348,7 @@ Handle<Value> RsaKeypair::Decrypt(const Arguments& args) {
   int out_len = RSA_size(kp->privateKey);
   unsigned char *out = (unsigned char*)malloc(out_len);
   
-  out_len = RSA_private_decrypt(len, buf, out, kp->privateKey, RSA_PKCS1_OAEP_PADDING);
+  out_len = RSA_private_decrypt(len, buf, out, kp->privateKey, kp->padding);
 
   if (out_len < 0) {
     char *err = ERR_error_string(ERR_get_error(), NULL);
@@ -392,6 +433,32 @@ Handle<Value> RsaKeypair::GetModulus(const Arguments& args) {
 
 Handle<Value> RsaKeypair::GetExponent(const Arguments& args) {
   return GetBignum(args, EXPONENT);
+}
+
+Handle<Value> RsaKeypair::GetPadding(const Arguments& args) {
+  HandleScope scope;
+
+  RsaKeypair *kp = ObjectWrap::Unwrap<RsaKeypair>(args.Holder());
+
+  Local<Value> outString;
+  switch (kp->padding) {
+    case RSA_PKCS1_OAEP_PADDING:
+      outString = String::New("oaep");
+      break;
+    case RSA_PKCS1_PADDING:
+      outString = String::New("pkcs1");
+      break;
+    case RSA_SSLV23_PADDING:
+      outString = String::New("sslv23");
+      break;
+    case RSA_NO_PADDING:
+      outString = String::New("none");
+      break;
+    default:
+      Local<Value> exception = Exception::Error(String::New("No padding defined"));
+      return ThrowException(exception);
+  }
+  return scope.Close(outString);
 }
 
 extern "C" void

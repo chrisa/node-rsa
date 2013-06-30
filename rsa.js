@@ -25,6 +25,10 @@ exports.createRsaKeypair = function(keys) {
 	    k.setPrivateKey(keys.privateKey);
 	}
     }
+    
+    if (keys.padding) {
+    k.setPadding(keys.padding);
+    }
 
     return k;
 }

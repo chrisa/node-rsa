@@ -1,6 +1,9 @@
 node-rsa - Changes
 ==================
 
+ * 0.0.x:
+   Added support for different padding modes (Eric Laberge <e.laberge@gmail.com>)
+
  * 0.0.3:
    Add getters for modulus and exponent (Dan Bornstein <danfuzz@obvious.com>)
 
